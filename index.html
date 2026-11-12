@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f172a">
+  <title>انتشارهای برنامه انبار هوشمند</title>
+  <style>
+    :root { color-scheme: light; font-family: Tahoma, Arial, sans-serif; }
+    body { margin: 0; background: #f1f5f9; color: #0f172a; line-height: 1.9; }
+    main { max-width: 760px; margin: 48px auto; padding: 0 18px; }
+    .panel { background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 28px; box-shadow: 0 8px 30px #0f172a0a; }
+    h1 { margin-top: 0; font-size: 1.55rem; }
+    .muted { color: #64748b; }
+    .version { font-size: 1.15rem; font-weight: 700; }
+    ul { padding-right: 22px; }
+    a { color: #0369a1; overflow-wrap: anywhere; }
+    .status { padding: 12px 14px; background: #f8fafc; border-radius: 10px; }
+    footer { margin-top: 18px; text-align: center; color: #64748b; font-size: .85rem; }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="panel">
+      <h1>انتشارهای برنامه انبار هوشمند</h1>
+      <p class="muted">اطلاعات نسخه‌ها، تغییرات و دریافت بسته‌های رسمی برنامه در این صفحه منتشر می‌شود.</p>
+      <div id="status" class="status" role="status">در حال دریافت اطلاعات نسخه...</div>
+      <section aria-labelledby="version-heading">
+        <h2 id="version-heading">آخرین نسخه</h2>
+        <p id="version" class="version">—</p>
+        <p id="date" class="muted"></p>
+        <h3>تغییرات این نسخه</h3>
+        <ul id="changelog"><li>هنوز موردی ثبت نشده است.</li></ul>
+        <p id="download-area"></p>
+      </section>
+    </section>
+    <footer>صفحه رسمی انتشار برنامه انبار هوشمند</footer>
+  </main>
+  <script>
+    (async function () {
+      const status = document.getElementById('status');
+      const version = document.getElementById('version');
+      const date = document.getElementById('date');
+      const changelog = document.getElementById('changelog');
+      const downloadArea = document.getElementById('download-area');
+      try {
+        const response = await fetch('./manifest.json', { cache: 'no-store' });
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        const data = await response.json();
+        version.textContent = data.version || 'نامشخص';
+        date.textContent = data.releaseDate ? 'تاریخ انتشار: ' + data.releaseDate : 'تاریخ انتشار هنوز ثبت نشده است.';
+        changelog.replaceChildren();
+        if (Array.isArray(data.changelog) && data.changelog.length) {
+          for (const entry of data.changelog) {
+            const li = document.createElement('li');
+            li.textContent = typeof entry === 'string' ? entry : (entry && entry.text ? String(entry.text) : '');
+            if (li.textContent) changelog.appendChild(li);
+          }
+        }
+        if (!changelog.children.length) {
+          const li = document.createElement('li');
+          li.textContent = 'تغییری برای نمایش ثبت نشده است.';
+          changelog.appendChild(li);
+        }
+        if (typeof data.downloadUrl === 'string') {
+          try {
+            const url = new URL(data.downloadUrl);
+            if (url.protocol === 'https:') {
+              const link = document.createElement('a');
+              link.href = url.href;
+              link.textContent = 'دریافت بسته این نسخه';
+              link.rel = 'noopener noreferrer';
+              downloadArea.appendChild(link);
+            }
+          } catch (_) {}
+        }
+        status.textContent = 'اطلاعات نسخه با موفقیت دریافت شد.';
+      } catch (_) {
+        status.textContent = 'دریافت اطلاعات نسخه ممکن نشد. لطفاً بعداً دوباره مراجعه کنید.';
+      }
+    })();
+  </script>
+</body>
+</html>
